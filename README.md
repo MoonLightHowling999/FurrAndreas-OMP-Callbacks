@@ -103,6 +103,12 @@ forward OnPlayerSprint(playerid, status);
 
 ---
 
+## Tests:
+
+[In-Game Screenshot](https://imgur.com/vLCSdBi)
+
+---
+
 ## Credits
 
 Original include by [Emmet_](https://github.com/emmet-jones). Open.MP fixes applied.
