@@ -131,6 +131,8 @@
 	native GetPlayerPacketLoss(playerid);
 */
 
+// NOTE: some comments are just dupilcats, they're just there as reminders of what was changed in the OMP update. 
+
 #if !defined POTENTIAL_CRASH_DAMAGE
 	#define POTENTIAL_CRASH_DAMAGE 		55.0
 #endif
@@ -349,6 +351,9 @@ forward OnPlayerUseCamera(playerid);
 forward OnPlayerJump(playerid);
 forward OnPlayerUseGarage(playerid, vehicleid, type);
 forward OnVehicleCreated(vehicleid, color1, color2);
+forward OnPlayerBurning(playerid, status);
+forward OnPlayerAiming(playerid, weaponid, status);
+forward OnPlayerSprint(playerid, status);
 
 // --------------------------------------------------
 // Internal functions
@@ -370,8 +375,8 @@ stock static Callback_SetFlag(playerid, e_PLAYER_FLAGS:flag, status)
 stock static Callback_GetDriver(vehicleid)
 {
 	// Returns the driver of a vehicle.
-	// FIX (OMP): Added IsPlayerConnected() guard; loop now uses MAX_PLAYERS
-	// instead of GetPlayerPoolSize() which behaves differently in Open.MP.
+	// Added IsPlayerConnected() guard loop now uses MAX_PLAYERS
+	// instead of GetPlayerPoolSize() which behaves differently in OMP
 
 	for(new i = 0; i < MAX_PLAYERS; i++)
 	{
@@ -389,7 +394,7 @@ stock static Callback_GetDriver(vehicleid)
 
 stock static Callback_GetMaxClip(weaponid)
 {
-	// Returns the clip capacity for the specified weapon (required by OnPlayerAntiReload).
+	// Returns the clip capacity for the specified weapon (required by OnPlayerAntiReload)
 
 	switch(weaponid)
 	{
@@ -779,7 +784,7 @@ public OnPlayerUpdate(playerid)
 	else if(!IsPlayerSkydiving(playerid) && s_aPlayerInfo[playerid][e_iAction] == PLAYER_ACTION_SKYDIVING)
 	{
 	    CallLocalFunction("OnPlayerActionChange", "iii", playerid, s_aPlayerInfo[playerid][e_iAction], PLAYER_ACTION_NONE);
-	    // FIX (logic): Was incorrectly setting action to PLAYER_ACTION_SKYDIVING on exit.
+	    // Was incorrectly setting action to PLAYER_ACTION_SKYDIVING on exit.
 	    s_aPlayerInfo[playerid][e_iAction] = PLAYER_ACTION_NONE;
 	}
 	else if(IsPlayerSwimming(playerid) && s_aPlayerInfo[playerid][e_iAction] != PLAYER_ACTION_SWIMMING)
@@ -801,7 +806,8 @@ public OnPlayerUpdate(playerid)
 	if((GetConnectedTime(playerid) - s_aPlayerTickInfo[playerid][e_PLAYER_BURN_TICK]) >= 1500 && Callback_GetFlag(playerid, e_bBurning))
 	{
 		Callback_SetFlag(playerid, e_bBurning, false);
- 		CallLocalFunction("OnPlayerStopBurn", "i", playerid);
+		CallLocalFunction("OnPlayerStopBurn", "i", playerid);
+		CallLocalFunction("OnPlayerBurning", "ii", playerid, 0);
 	}
 
 	switch(GetPlayerState(playerid))
@@ -877,29 +883,28 @@ public OnPlayerUpdate(playerid)
 	            s_aPlayerInfo[playerid][e_iMoney] = money;
 	        }
 
-	 		new
-	   			vehicleid = GetPlayerVehicleID(playerid),
-			   	VEHICLE_PANEL_STATUS:panels,
-			   	VEHICLE_DOOR_STATUS:doors,
-			   	VEHICLE_LIGHT_STATUS:lights,
-			   	VEHICLE_TYRE_STATUS:tires
-	   		;
+		new
+			vehicleid = GetPlayerVehicleID(playerid),
+			VEHICLE_PANEL_STATUS:panels,
+			VEHICLE_DOOR_STATUS:doors,
+			VEHICLE_LIGHT_STATUS:lights,
+			VEHICLE_TYRE_STATUS:tires;
 
-			GetVehicleHealth(vehicleid, health);
+		GetVehicleHealth(vehicleid, health);
 
-			if(s_aVehicleInfo[vehicleid][e_fHealth] > health && floatabs(s_aVehicleInfo[vehicleid][e_fHealth] - health) >= POTENTIAL_CRASH_DAMAGE && floatabs(s_aVehicleInfo[vehicleid][e_fSpeed] - Callback_GetSpeed(vehicleid)) >= 5.0)
+		if(s_aVehicleInfo[vehicleid][e_fHealth] > health && floatabs(s_aVehicleInfo[vehicleid][e_fHealth] - health) >= POTENTIAL_CRASH_DAMAGE && floatabs(s_aVehicleInfo[vehicleid][e_fSpeed] - Callback_GetSpeed(vehicleid)) >= 5.0)
+		{
+			GetVehicleDamageStatus(vehicleid, panels, doors, lights, tires);
+
+			if(_:s_aVehicleInfo[vehicleid][e_iPanels] != _:panels || _:s_aVehicleInfo[vehicleid][e_iDoors] != _:doors || _:s_aVehicleInfo[vehicleid][e_iLights] != _:lights)
 			{
-				GetVehicleDamageStatus(vehicleid, panels, doors, lights, tires);
-
-			    if(_:s_aVehicleInfo[vehicleid][e_iPanels] != _:panels || _:s_aVehicleInfo[vehicleid][e_iDoors] != _:doors || _:s_aVehicleInfo[vehicleid][e_iLights] != _:lights)
-			    {
-					CallLocalFunction("OnPlayerCrashVehicle", "iif", playerid, vehicleid, floatsub(s_aVehicleInfo[vehicleid][e_fHealth], health));
-				}
-
-				GetVehicleDamageStatus(vehicleid, VEHICLE_PANEL_STATUS:s_aVehicleInfo[vehicleid][e_iPanels], VEHICLE_DOOR_STATUS:s_aVehicleInfo[vehicleid][e_iDoors], VEHICLE_LIGHT_STATUS:s_aVehicleInfo[vehicleid][e_iLights], tires);
+				CallLocalFunction("OnPlayerCrashVehicle", "iif", playerid, vehicleid, floatsub(s_aVehicleInfo[vehicleid][e_fHealth], health));
 			}
-			s_aVehicleInfo[vehicleid][e_fHealth] = health;
-			s_aVehicleInfo[vehicleid][e_fSpeed] = Callback_GetSpeed(vehicleid);
+
+			GetVehicleDamageStatus(vehicleid, VEHICLE_PANEL_STATUS:s_aVehicleInfo[vehicleid][e_iPanels], VEHICLE_DOOR_STATUS:s_aVehicleInfo[vehicleid][e_iDoors], VEHICLE_LIGHT_STATUS:s_aVehicleInfo[vehicleid][e_iLights], tires);
+		}
+		s_aVehicleInfo[vehicleid][e_fHealth] = health;
+		s_aVehicleInfo[vehicleid][e_fSpeed] = Callback_GetSpeed(vehicleid);
 		}
 	}
 
@@ -1069,14 +1074,26 @@ public OnPlayerKeyStateChange(playerid, KEY:newkeys, KEY:oldkeys)
 			{
 				if(!Callback_GetFlag(playerid, e_bAiming) && (newkeys & KEY_HANDBRAKE) & KEY_HANDBRAKE)
 				{
-	                Callback_SetFlag(playerid, e_bAiming, true);
-		    		CallLocalFunction("OnPlayerStartAim", "ii", playerid, _:weaponid);
+					Callback_SetFlag(playerid, e_bAiming, true);
+					CallLocalFunction("OnPlayerStartAim", "ii", playerid, _:weaponid);
+					CallLocalFunction("OnPlayerAiming", "iii", playerid, _:weaponid, 1);
 				}
 				else if((newkeys & KEY_HANDBRAKE) != KEY_HANDBRAKE && (oldkeys & KEY_HANDBRAKE) == KEY_HANDBRAKE)
 				{
-				    Callback_SetFlag(playerid, e_bAiming, false);
-				    CallLocalFunction("OnPlayerStopAim", "i", playerid);
+					Callback_SetFlag(playerid, e_bAiming, false);
+					CallLocalFunction("OnPlayerStopAim", "i", playerid);
+					CallLocalFunction("OnPlayerAiming", "iii", playerid, _:weaponid, 0);
 				}
+			}
+
+			
+			if((newkeys & KEY_SPRINT) & KEY_SPRINT)
+			{
+				CallLocalFunction("OnPlayerSprint", "ii", playerid, 1);
+			}
+			else if((newkeys & KEY_SPRINT) != KEY_SPRINT && (oldkeys & KEY_SPRINT) == KEY_SPRINT)
+			{
+				CallLocalFunction("OnPlayerSprint", "ii", playerid, 0);
 			}
 		}
 	}
@@ -1117,10 +1134,11 @@ public OnPlayerTakeDamage(playerid, issuerid, Float:amount, WEAPON:weaponid, bod
 
 	if(weaponid == WEAPON_FLAMETHROWER)
 	{
- 		if(!Callback_GetFlag(playerid, e_bBurning))
-   		{
-     		Callback_SetFlag(playerid, e_bBurning, true);
-      		CallLocalFunction("OnPlayerStartBurn", "i", playerid);
+		if(!Callback_GetFlag(playerid, e_bBurning))
+		{
+			Callback_SetFlag(playerid, e_bBurning, true);
+			CallLocalFunction("OnPlayerStartBurn", "i", playerid);
+			CallLocalFunction("OnPlayerBurning", "ii", playerid, 1);
 		}
 		s_aPlayerTickInfo[playerid][e_PLAYER_BURN_TICK] = GetConnectedTime(playerid);
 	}
@@ -1179,7 +1197,7 @@ public Callback_TabCheck()
 	// FIX (OMP): Replaced GetPlayerPoolSize() with MAX_PLAYERS and added
 	// IsPlayerConnected() guard. In Open.MP, GetPlayerPoolSize() returns the
 	// highest *used* slot index rather than a reliable upper bound for iteration,
-	// so iterating to MAX_PLAYERS with a connectivity check is the correct pattern (If i'm not wrong).
+	// so iterating to MAX_PLAYERS with a connectivity check is the correct pattern.
 	for(new i = 0; i < MAX_PLAYERS; i++)
 	{
 		if(!IsPlayerConnected(i))
@@ -1366,5 +1384,3 @@ public Callback_TabCheck()
 
 // NOTE: OnPlayerBurning, OnPlayerAiming, OnPlayerSprint are user-defined callbacks.
 // Forward-declare them in your own script, not here.
-
-// Happy scripting... :3
