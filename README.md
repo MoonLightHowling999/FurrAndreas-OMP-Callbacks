@@ -111,4 +111,4 @@ forward OnPlayerSprint(playerid, status);
 
 ## Credits
 
-Original include by [Emmet_](https://github.com/emmet-jones). Open.MP fixes applied.
+Original include by [Emmet_](https://github.com/emmet-jones).
