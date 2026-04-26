@@ -71,7 +71,7 @@ Just include it in your gamemode or filterscript and define whichever callbacks 
 
 public OnPlayerJump(playerid)
 {
-    SendClientMessage(playerid, 0xCDD5D4, "{CDD5D4}Player %d has jumped", playerid); // show this when somebody jumpps another
+    SendClientMessage(playerid, 0xCDD5D4, "{CDD5D4}Player %d has jumped", playerid); // show this when somebody jumpps 
 	return 1;
 }
 
