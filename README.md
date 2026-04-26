@@ -85,15 +85,15 @@ public OnPlayerRamPlayer(playerid, driverid, vehicleid, Float:damage)
 For a more complete example see **[example.pwn](example.pwn)**.
 
 ---
-
-## Notes
-- Some callbacks need to be Forward-declared in your own script like so:
+> [!IMPORTANT]
+> ## Notes
+> - Some callbacks need to be Forward-declared in your own script like so:
 ```pawn
 
-// Forwards here
-forward OnPlayerBurning(playerid, status);
-forward OnPlayerAiming(playerid, weaponid, status);
-forward OnPlayerSprint(playerid, status);
+ // Forwards here
+ forward OnPlayerBurning(playerid, status);
+ forward OnPlayerAiming(playerid, weaponid, status);
+ forward OnPlayerSprint(playerid, status);
 ```
 
 - Compatible with other includes that hook `OnPlayerUpdate` etc. via ALS
