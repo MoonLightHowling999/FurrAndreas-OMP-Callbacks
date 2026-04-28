@@ -1,0 +1,8 @@
+{
+  "user": "MoonLightHowling999",
+  "repo": "FurrAndreas-OMP-Callbacks",
+  "entry": "calbacks.inc",
+  "dependencies": [
+    "pawn-lang/samp-stdlib"
+  ]
+}
