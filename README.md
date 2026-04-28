@@ -61,6 +61,12 @@ GetConnectedTime(playerid)
 ```
 
 ---
+## For sampctl users
+Add to your `pawn.json` dependencies:
+```json
+"MoonLightHowling999/FurrAndreas-OMP-Callbacks"
+```
+Then run: `sampctl ensure`
 
 ## Usage
 
